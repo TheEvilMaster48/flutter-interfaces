@@ -1,65 +1,35 @@
 import os
-import time
-from watchdog.observers import Observer
-from watchdog.events import FileSystemEventHandler
 import subprocess
+from datetime import datetime
 
 # Ruta del proyecto
 PROJECT_PATH = r"C:\Users\Estku\Downloads\flutter_interfaces-main"
 
-# Archivos o carpetas que no deben activar el evento
-IGNORAR = [
-    ".git", "__pycache__", "auto_git_watcher.py",
-    "pubspec.lock", ".dart_tool", "build"
-]
+def subir_a_github():
+    try:
+        print("\n🟡 Se ha actualizado cambios, subiendo a GitHub...")
 
-class GitAutoPushHandler(FileSystemEventHandler):
-    ultima_subida = 0
+        os.chdir(PROJECT_PATH)
 
-    def on_any_event(self, event):
-        # Evita directorios o archivos ignorados
-        if any(skip in event.src_path for skip in IGNORAR):
+        # Detectar si hay cambios reales
+        status = subprocess.run(["git", "status", "--porcelain"], capture_output=True, text=True)
+        if not status.stdout.strip():
+            print("ℹ️ No hay cambios nuevos para subir.\n")
+            print("✅ Informe: Ejecución completada. No se detectaron cambios.")
             return
 
-        # Evita ejecuciones múltiples seguidas (cooldown de 10s)
-        if time.time() - self.ultima_subida < 10:
-            return
+        # Agregar, commit y push
+        subprocess.run(["git", "add", "."], check=True)
+        fecha = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        subprocess.run(["git", "commit", "-m", f"Auto actualización de código ({fecha})"], check=False)
+        subprocess.run(["git", "push", "origin", "main"], check=True)
 
-        try:
-            print("\n🟡 Se ha actualizado cambios, subiendo a GitHub...")
-            self.ultima_subida = time.time()
+        print("✅ Subido correctamente a GitHub sin ningún problema.\n")
+        print("📄 Informe: La ejecución del informe se completó correctamente y se subió a GitHub.")
 
-            os.chdir(PROJECT_PATH)
-
-            # Detectar si realmente hay cambios
-            status = subprocess.run(["git", "status", "--porcelain"],
-                                    capture_output=True, text=True)
-            if not status.stdout.strip():
-                print("ℹ️ No hay cambios nuevos para subir.\n")
-                return
-
-            # Subir cambios reales
-            subprocess.run(["git", "add", "."], check=True)
-            subprocess.run(["git", "commit", "-m", "Auto actualización de código"], check=False)
-            subprocess.run(["git", "push", "origin", "main"], check=True)
-
-            print("✅ Subido correctamente a GitHub sin ningún problema.\n")
-
-        except subprocess.CalledProcessError:
-            print("🔴 No se ha podido subir el proyecto a GitHub, revise e inténtelo de nuevo.\n")
-
+    except subprocess.CalledProcessError:
+        print("🔴 No se ha podido subir el proyecto a GitHub, revise e inténtelo de nuevo.\n")
+        print("📄 Informe: La ejecución del informe falló por un error de Git o conexión.")
 
 if __name__ == "__main__":
-    event_handler = GitAutoPushHandler()
-    observer = Observer()
-    observer.schedule(event_handler, PROJECT_PATH, recursive=True)
-    observer.start()
-
-    print("👀 Monitorizando cambios en tu proyecto Flutter... (presiona CTRL+C para detener)\n")
-
-    try:
-        while True:
-            time.sleep(2)
-    except KeyboardInterrupt:
-        observer.stop()
-    observer.join()
+    subir_a_github()
