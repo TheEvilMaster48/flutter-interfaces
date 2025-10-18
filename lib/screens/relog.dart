@@ -142,7 +142,7 @@ class _RelojScreensState extends State<RelojScreens> {
 
                         const SizedBox(height: 50),
 
-                        // Reloj digital y fecha
+                        // Reloj digital y Fecha
                         Padding(
                           padding: const EdgeInsets.symmetric(horizontal: 30.0),
                           child: Container(
